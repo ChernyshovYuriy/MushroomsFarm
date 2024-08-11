@@ -1,0 +1,21 @@
+SSH Pwd: yurii
+
+Copy to Pi:
+scp *.py yurii@192.168.4.45:/home/yurii/controller
+
+Code examples:
+https://github.com/machineshopuk/SHT31/blob/master/SHT31.py
+
+USB controller:
+https://thepihut.com/products/usb-power-switch-module
+
+Static IP:
+https://forums.raspberrypi.com/viewtopic.php?t=366025
+https://www.abelectronics.co.uk/kb/article/31/set-a-static-ip-address-on-raspberry-pi-os-bookworm
+
+Changing the wifi address to 192.168.4.45:
+get name "Oxio": sudo nmcli -p connection show
+sudo nmcli c mod "Oxio" ipv4.addresses 192.168.4.45/24 ipv4.method manual
+sudo nmcli c mod "Oxio" ipv4.gateway 192.168.0.1
+sudo nmcli c mod "Oxio" ipv4.dns "8.8.8.8,8.8.4.4"
+sudo reboot

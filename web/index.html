@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mushrooms controller</title>
+</head>
+<body>
+<script>
+    const BASE_URL = "http://192.168.4.45";
+
+    var tempUrl = `${BASE_URL}:8080/temp`;
+    var humdUrl = `${BASE_URL}:8080/humd`;
+    var humdStartUrl = `${BASE_URL}:8080/humd/start`;
+    var humdStopUrl = `${BASE_URL}:8080/humd/stop`;
+    var intervalPeriod = 1000;
+    var xhr = new XMLHttpRequest();
+
+    setInterval(fetchData, intervalPeriod);
+
+    function openCORSRequest(method, url) {
+        if ("withCredentials" in xhr) {
+            xhr.open(method, url, true);
+        } else if (typeof XDomainRequest != "undefined") {
+            xhr = new XDomainRequest();
+            xhr.open(method, url);
+        } else {
+            xhr = null;
+        }
+        return xhr;
+    }
+
+    function fetchData() {
+        fetchTemp();
+    }
+
+    function fetchTemp() {
+        var tempRequest = openCORSRequest("get", tempUrl);
+        if (tempRequest) {
+            tempRequest.onload = function() {
+                document.getElementById("temp-text-view").innerHTML = tempRequest.responseText;
+                fetchHumd();
+            };
+            tempRequest.send();
+        }
+    }
+
+    function fetchHumd() {
+        var humdRequest = openCORSRequest("get", humdUrl);
+        if (humdRequest) {
+            humdRequest.onload = function() {
+                document.getElementById("humd-text-view").innerHTML = humdRequest.responseText;
+            };
+            humdRequest.send();
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        // Set the src attribute of the img tag
+        document.querySelector("img").src = `${BASE_URL}:8000/camera`;
+
+        document.getElementById("humd_start_btn").addEventListener("click", function() {
+            var humdStartRequest = openCORSRequest("post", humdStartUrl);
+            if (humdStartRequest) {
+                humdStartRequest.send();
+            }
+        });
+
+        document.getElementById("humd_stop_btn").addEventListener("click", function() {
+            var humdStopRequest = openCORSRequest("post", humdStopUrl);
+            if (humdStopRequest) {
+                console.log('Send stop');
+                humdStopRequest.send();
+            }
+        });
+    });
+</script>
+<div style="text-align: center;">
+    <img width="1280" height="720" src=""
+         style="display: inline-block; margin: 0 auto;"/>
+    <div style="display: flex; justify-content: center;">
+        <div style="font-size: 50px; color: #333; padding: 20px;">Temperature</div>
+        <div id="temp-text-view" style="font-size: 50px; color: #333; padding: 20px;"></div>
+        <div style="font-size: 50px; color: #333; padding: 20px;">&deg;C</div>
+    </div>
+    <div style="display: flex; justify-content: center;">
+        <div style="font-size: 50px; color: #333; padding: 20px;">Humidity</div>
+        <div id="humd-text-view" style="font-size: 50px; color: #333; padding: 20px;"></div>
+        <div style="font-size: 50px; color: #333; padding: 20px;">%</div>
+        <div style="padding: 20px;">
+            <button id="humd_start_btn" style="font-size: 30px; padding: 10px 20px;">Start</button>
+            <button id="humd_stop_btn" style="font-size: 30px; padding: 10px 20px;">Stop</button>
+        </div>
+    </div>
+</div>
+</body>
+</html>
