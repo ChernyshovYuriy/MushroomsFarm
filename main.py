@@ -1,12 +1,11 @@
 import signal
-import sys
 import threading
 
 from camera import Camera
 from httpserver import HttpServer, HttpServerData
 from shared_data import SharedSHT31
 from sht31 import SHT31
-from usb_controller import UsbController
+from usb_controller import MoistureController
 
 
 class Controller:
@@ -17,7 +16,7 @@ class Controller:
     def __init__(self):
         print("Init controller")
         shared_data_sht31 = SharedSHT31()
-        self.usb_controller = UsbController(shared_data_sht31)
+        self.usb_controller = MoistureController(shared_data_sht31)
         self.sht31 = SHT31(shared_data_sht31)
         self.server_data = HttpServerData()
         self.camera = Camera()
@@ -44,9 +43,11 @@ if __name__ == "__main__":
 
     controller = Controller()
 
+
     def signal_handler(sig, frame):
         controller.stop()
         raise KeyboardInterrupt
+
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
