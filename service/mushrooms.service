@@ -1,0 +1,13 @@
+[Unit]
+Description=Mushrooms Farm Controller
+After=network.target
+
+[Service]
+User=yurii
+WorkingDirectory=/home/yurii/MushroomsFarm
+ExecStart=/usr/bin/python3 main.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
