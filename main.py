@@ -2,28 +2,25 @@ import signal
 import threading
 
 from camera import Camera
-from httpserver import HttpServer, HttpServerData
-from shared_data import SharedSHT31
+from httpserver import HttpServer
+from moisture_controller import MoistureController
+from shared_data import SensorData
 from sht31 import SHT31
-from usb_controller import MoistureController
 
 
 class Controller:
-    """
-    Main controller of the Mushrooms Controller.
-    """
+    """Orchestrates all subsystems of the Mushroom Farm controller."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         print("Init controller")
-        shared_data_sht31 = SharedSHT31()
-        self.usb_controller = MoistureController(shared_data_sht31)
-        self.sht31 = SHT31(shared_data_sht31)
-        self.server_data = HttpServerData()
+        sensor_data = SensorData()
+        self.moisture_controller = MoistureController(sensor_data)
+        self.sht31 = SHT31(sensor_data)
         self.camera = Camera()
-        self.server = HttpServer(self.usb_controller, shared_data_sht31)
+        self.server = HttpServer(self.moisture_controller, sensor_data)
 
-    def start(self):
-        self.usb_controller.start()
+    def start(self) -> None:
+        self.moisture_controller.start()
         self.sht31.start()
         self.camera.start()
         self.server.start()
@@ -31,8 +28,8 @@ class Controller:
         self.camera.join()
         self.server.join()
 
-    def stop(self):
-        self.usb_controller.stop()
+    def stop(self) -> None:
+        self.moisture_controller.stop()
         self.sht31.stop()
         self.camera.stop()
         self.server.stop()
@@ -44,7 +41,7 @@ if __name__ == "__main__":
     controller = Controller()
 
 
-    def signal_handler(sig, frame):
+    def signal_handler(sig, frame) -> None:
         controller.stop()
         raise KeyboardInterrupt
 

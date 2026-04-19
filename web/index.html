@@ -1,95 +1,171 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Mushrooms controller</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🍄 Mushroom Farm</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f1a0f;
+      color: #d4e8d4;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    h1 { font-size: 1.6rem; font-weight: 600; color: #7ec87e; letter-spacing: 0.05em; margin-top: 8px; }
+
+    .camera-wrap {
+      width: 100%; max-width: 860px;
+      border-radius: 12px; overflow: hidden;
+      border: 1px solid #2a3d2a; background: #111;
+      position: relative;
+    }
+    .camera-wrap img { width: 100%; display: block; }
+    .cam-label {
+      position: absolute; top: 10px; left: 12px;
+      background: rgba(0,0,0,.55); color: #7ec87e;
+      font-size: 0.75rem; padding: 3px 8px;
+      border-radius: 20px; letter-spacing: 0.04em;
+    }
+
+    .cards {
+      display: flex; gap: 16px; flex-wrap: wrap;
+      justify-content: center; width: 100%; max-width: 860px;
+    }
+    .card {
+      flex: 1 1 220px; background: #162016;
+      border: 1px solid #2a3d2a; border-radius: 12px;
+      padding: 20px 24px; display: flex; flex-direction: column; gap: 6px;
+    }
+    .card-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: #5a8a5a; }
+    .card-value { font-size: 3rem; font-weight: 700; color: #a8e0a8; line-height: 1; }
+    .card-unit  { font-size: 1rem; color: #5a8a5a; margin-left: 4px; }
+
+    .status-dot {
+      display: inline-block; width: 10px; height: 10px;
+      border-radius: 50%; margin-right: 6px;
+      background: #3a5a3a; transition: background 0.4s;
+    }
+    .status-dot.on  { background: #4caf50; box-shadow: 0 0 6px #4caf50; }
+    .card-status { font-size: 0.85rem; color: #7aaa7a; display: flex; align-items: center; margin-top: 4px; }
+
+    .controls { display: flex; gap: 12px; margin-top: 8px; }
+    button {
+      cursor: pointer; border: none; border-radius: 8px;
+      font-size: 0.9rem; font-weight: 600; padding: 10px 22px;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    button:active { transform: scale(0.97); }
+    button:disabled { opacity: 0.4; cursor: default; }
+    .btn-on  { background: #2e7d32; color: #c8e6c9; }
+    .btn-on:hover:not(:disabled)  { background: #388e3c; }
+    .btn-off { background: #1b3a1e; color: #a5c8a5; border: 1px solid #2a4d2a; }
+    .btn-off:hover:not(:disabled) { background: #243f27; }
+
+    .error-banner {
+      display: none; background: #3b1010; border: 1px solid #7b2020;
+      color: #f08080; border-radius: 8px; padding: 10px 16px;
+      font-size: 0.85rem; width: 100%; max-width: 860px; text-align: center;
+    }
+    .error-banner.visible { display: block; }
+    .last-update { font-size: 0.75rem; color: #3d6040; margin-top: auto; }
+  </style>
 </head>
 <body>
-<script>
-    const BASE_URL = "http://192.168.4.45";
 
-    var tempUrl = `${BASE_URL}:8080/temp`;
-    var humdUrl = `${BASE_URL}:8080/humd`;
-    var humdStartUrl = `${BASE_URL}:8080/humd/start`;
-    var humdStopUrl = `${BASE_URL}:8080/humd/stop`;
-    var intervalPeriod = 1000;
-    var xhr = new XMLHttpRequest();
+<h1>🍄 Mushroom Farm</h1>
 
-    setInterval(fetchData, intervalPeriod);
-
-    function openCORSRequest(method, url) {
-        if ("withCredentials" in xhr) {
-            xhr.open(method, url, true);
-        } else if (typeof XDomainRequest != "undefined") {
-            xhr = new XDomainRequest();
-            xhr.open(method, url);
-        } else {
-            xhr = null;
-        }
-        return xhr;
-    }
-
-    function fetchData() {
-        fetchTemp();
-    }
-
-    function fetchTemp() {
-        var tempRequest = openCORSRequest("get", tempUrl);
-        if (tempRequest) {
-            tempRequest.onload = function() {
-                document.getElementById("temp-text-view").innerHTML = tempRequest.responseText;
-                fetchHumd();
-            };
-            tempRequest.send();
-        }
-    }
-
-    function fetchHumd() {
-        var humdRequest = openCORSRequest("get", humdUrl);
-        if (humdRequest) {
-            humdRequest.onload = function() {
-                document.getElementById("humd-text-view").innerHTML = humdRequest.responseText;
-            };
-            humdRequest.send();
-        }
-    }
-
-    document.addEventListener("DOMContentLoaded", function() {
-        // Set the src attribute of the img tag
-        document.querySelector("img").src = `${BASE_URL}:8000/camera`;
-
-        document.getElementById("humd_start_btn").addEventListener("click", function() {
-            var humdStartRequest = openCORSRequest("post", humdStartUrl);
-            if (humdStartRequest) {
-                humdStartRequest.send();
-            }
-        });
-
-        document.getElementById("humd_stop_btn").addEventListener("click", function() {
-            var humdStopRequest = openCORSRequest("post", humdStopUrl);
-            if (humdStopRequest) {
-                console.log('Send stop');
-                humdStopRequest.send();
-            }
-        });
-    });
-</script>
-<div style="text-align: center;">
-    <img width="1280" height="720" src=""
-         style="display: inline-block; margin: 0 auto;"/>
-    <div style="display: flex; justify-content: center;">
-        <div style="font-size: 50px; color: #333; padding: 20px;">Temperature</div>
-        <div id="temp-text-view" style="font-size: 50px; color: #333; padding: 20px;"></div>
-        <div style="font-size: 50px; color: #333; padding: 20px;">&deg;C</div>
-    </div>
-    <div style="display: flex; justify-content: center;">
-        <div style="font-size: 50px; color: #333; padding: 20px;">Humidity</div>
-        <div id="humd-text-view" style="font-size: 50px; color: #333; padding: 20px;"></div>
-        <div style="font-size: 50px; color: #333; padding: 20px;">%</div>
-        <div style="padding: 20px;">
-            <button id="humd_start_btn" style="font-size: 30px; padding: 10px 20px;">Start</button>
-            <button id="humd_stop_btn" style="font-size: 30px; padding: 10px 20px;">Stop</button>
-        </div>
-    </div>
+<div class="camera-wrap">
+  <span class="cam-label">● LIVE</span>
+  <img id="camera" src="" alt="Camera stream" />
 </div>
+
+<div id="error-banner" class="error-banner">⚠ Cannot reach controller — check network connection.</div>
+
+<div class="cards">
+  <div class="card">
+    <span class="card-label">Temperature</span>
+    <div><span id="temp-value" class="card-value">--</span><span class="card-unit">°C</span></div>
+    <span id="last-update" class="last-update">Waiting for data…</span>
+  </div>
+
+  <div class="card">
+    <span class="card-label">Humidity</span>
+    <div><span id="humd-value" class="card-value">--</span><span class="card-unit">%</span></div>
+    <span class="card-label" style="margin-top:4px">Target: 90 – 100 %</span>
+  </div>
+
+  <div class="card">
+    <span class="card-label">Humidifier</span>
+    <div class="card-status">
+      <span id="status-dot" class="status-dot off"></span>
+      <span id="status-text">Unknown</span>
+    </div>
+    <div class="controls">
+      <button id="btn-on"  class="btn-on"  onclick="setMoisture(true)">Turn On</button>
+      <button id="btn-off" class="btn-off" onclick="setMoisture(false)">Turn Off</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // When served from the Pi (http://192.168.4.45:8080) window.location.origin
+  // already points at the right host — no hardcoded IP needed.
+  const API_BASE = window.location.origin;                         // :8080
+  const CAM_BASE = window.location.hostname + ":8000";            // :8000
+
+  document.getElementById("camera").src = `http://${CAM_BASE}/camera`;
+
+  function updateStatus(on) {
+    document.getElementById("status-dot").className = "status-dot " + (on ? "on" : "off");
+    document.getElementById("status-text").textContent = on ? "Running" : "Stopped";
+    document.getElementById("btn-on").disabled  =  on;
+    document.getElementById("btn-off").disabled = !on;
+  }
+
+  function setError(visible) {
+    document.getElementById("error-banner").classList.toggle("visible", visible);
+  }
+
+  async function fetchStatus() {
+    try {
+      const res  = await fetch(`${API_BASE}/status`);
+      if (!res.ok) throw new Error(res.status);
+      const data = await res.json();
+      document.getElementById("temp-value").textContent = data.temp_c;
+      document.getElementById("humd-value").textContent = data.humd;
+      updateStatus(data.moisturizer_on);
+      document.getElementById("last-update").textContent = "Updated " + new Date().toLocaleTimeString();
+      setError(false);
+    } catch (e) {
+      setError(true);
+    }
+  }
+
+  async function setMoisture(on) {
+    document.getElementById("btn-on").disabled  = true;
+    document.getElementById("btn-off").disabled = true;
+    try {
+      const res  = await fetch(`${API_BASE}/humd/${on ? "start" : "stop"}`, { method: "POST" });
+      if (!res.ok) throw new Error(res.status);
+      const data = await res.json();
+      updateStatus(data.moisturizer_on);
+      setError(false);
+    } catch {
+      setError(true);
+      updateStatus(!on);
+    }
+  }
+
+  fetchStatus();
+  setInterval(fetchStatus, 2000);
+</script>
 </body>
 </html>
