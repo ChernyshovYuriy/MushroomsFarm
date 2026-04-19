@@ -64,30 +64,45 @@ class Camera(AbstractWorker):
                 pass
 
             def do_GET(self) -> None:
-                if self.path != "/camera":
+                if self.path == "/camera":
+                    self.send_response(200)
+                    self.send_header("Age", "0")
+                    self.send_header("Cache-Control", "no-cache, private")
+                    self.send_header("Pragma", "no-cache")
+                    self.send_header("Access-Control-Allow-Origin", "*")
+                    self.send_header(
+                        "Content-Type", "multipart/x-mixed-replace; boundary=FRAME"
+                    )
+                    self.end_headers()
+                    try:
+                        while True:
+                            with output.condition:
+                                output.condition.wait()
+                                frame = output.frame
+                            self.wfile.write(b"--FRAME\r\n")
+                            self.send_header("Content-Type", "image/jpeg")
+                            self.send_header("Content-Length", str(len(frame)))
+                            self.end_headers()
+                            self.wfile.write(frame)
+                            self.wfile.write(b"\r\n")
+                    except Exception as exc:
+                        logging.warning("Streaming client disconnected: %s", exc)
+                elif self.path == "/snapshot":
+                    with output.condition:
+                        output.condition.wait(timeout=2)
+                        frame = output.frame
+                    if frame is None:
+                        self.send_error(503, "No frame available")
+                        return
+                    self.send_response(200)
+                    self.send_header("Content-Type", "image/jpeg")
+                    self.send_header("Content-Length", str(len(frame)))
+                    self.send_header("Cache-Control", "no-cache, no-store")
+                    self.send_header("Access-Control-Allow-Origin", "*")
+                    self.end_headers()
+                    self.wfile.write(frame)
+                else:
                     self.send_error(404)
-                    return
-                self.send_response(200)
-                self.send_header("Age", "0")
-                self.send_header("Cache-Control", "no-cache, private")
-                self.send_header("Pragma", "no-cache")
-                self.send_header(
-                    "Content-Type", "multipart/x-mixed-replace; boundary=FRAME"
-                )
-                self.end_headers()
-                try:
-                    while True:
-                        with output.condition:
-                            output.condition.wait()
-                            frame = output.frame
-                        self.wfile.write(b"--FRAME\r\n")
-                        self.send_header("Content-Type", "image/jpeg")
-                        self.send_header("Content-Length", str(len(frame)))
-                        self.end_headers()
-                        self.wfile.write(frame)
-                        self.wfile.write(b"\r\n")
-                except Exception as exc:
-                    logging.warning("Streaming client disconnected: %s", exc)
 
         class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
             allow_reuse_address = True

@@ -27,12 +27,23 @@
       border: 1px solid #2a3d2a; background: #111;
       position: relative;
     }
-    .camera-wrap img { width: 100%; display: block; }
+    /*
+     * Direct MJPEG <img>: the browser decodes and paints each JPEG boundary
+     * as it arrives — no JS involved, no per-frame fetch round-trip.
+     * This is the lowest-latency approach available in a browser.
+     */
+    #camera-img { width: 100%; display: block; }
     .cam-label {
       position: absolute; top: 10px; left: 12px;
       background: rgba(0,0,0,.55); color: #7ec87e;
       font-size: 0.75rem; padding: 3px 8px;
       border-radius: 20px; letter-spacing: 0.04em;
+    }
+    #cam-status {
+      position: absolute; top: 10px; right: 12px;
+      background: rgba(0,0,0,.55); color: #f08080;
+      font-size: 0.75rem; padding: 3px 8px;
+      border-radius: 20px; display: none;
     }
 
     .cards {
@@ -84,7 +95,14 @@
 
 <div class="camera-wrap">
   <span class="cam-label">● LIVE</span>
-  <img id="camera" src="" alt="Camera stream" />
+  <span id="cam-status">⚠ Reconnecting…</span>
+  <!--
+    Direct MJPEG img: browser renders each frame the moment the JPEG
+    boundary arrives off the socket — no polling, no JS decode loop.
+    On error we reassign src with a fresh timestamp to force reconnect
+    and bypass any in-flight browser buffer.
+  -->
+  <img id="camera-img" src="" alt="camera stream" />
 </div>
 
 <div id="error-banner" class="error-banner">⚠ Cannot reach controller — check network connection.</div>
@@ -116,12 +134,41 @@
 </div>
 
 <script>
-  // When served from the Pi (http://192.168.4.45:8080) window.location.origin
-  // already points at the right host — no hardcoded IP needed.
-  const API_BASE = window.location.origin;                         // :8080
-  const CAM_BASE = window.location.hostname + ":8000";            // :8000
+  const API_BASE = window.location.origin;                       // http://pi:8080
+  const CAM_BASE = "http://" + window.location.hostname + ":8000";
 
-  document.getElementById("camera").src = `http://${CAM_BASE}/camera`;
+  // ── Camera: direct MJPEG img ────────────────────────────────────────────────
+  // Assigning the MJPEG URL directly to <img src> is the fastest possible path:
+  // the browser decodes and paints each JPEG frame as bytes arrive, with no JS
+  // overhead or per-frame fetch round-trip.
+  // On error (network blip) we wait briefly, then reassign src with a fresh ?t=
+  // timestamp. This forces a brand-new TCP connection, flushing any stale buffered
+  // data the browser accumulated during the disconnect.
+
+  (function startCamera() {
+    const img       = document.getElementById("camera-img");
+    const statusEl  = document.getElementById("cam-status");
+    let retryTimer  = null;
+
+    function connect() {
+      img.src = CAM_BASE + "/camera?t=" + Date.now();
+    }
+
+    img.onload = function() {
+      statusEl.style.display = "none";
+    };
+
+    img.onerror = function() {
+      statusEl.style.display = "block";
+      img.src = "";                          // abort pending connection
+      clearTimeout(retryTimer);
+      retryTimer = setTimeout(connect, 2000);
+    };
+
+    connect();
+  })();
+
+  // ── Sensor data via Server-Sent Events (push, ~200 ms latency) ──────────────
 
   function updateStatus(on) {
     document.getElementById("status-dot").className = "status-dot " + (on ? "on" : "off");
@@ -134,20 +181,28 @@
     document.getElementById("error-banner").classList.toggle("visible", visible);
   }
 
-  async function fetchStatus() {
-    try {
-      const res  = await fetch(`${API_BASE}/status`);
-      if (!res.ok) throw new Error(res.status);
-      const data = await res.json();
+  function connectSSE() {
+    const es = new EventSource(API_BASE + "/events");
+
+    es.onmessage = function(e) {
+      const data = JSON.parse(e.data);
       document.getElementById("temp-value").textContent = data.temp_c;
       document.getElementById("humd-value").textContent = data.humd;
       updateStatus(data.moisturizer_on);
       document.getElementById("last-update").textContent = "Updated " + new Date().toLocaleTimeString();
       setError(false);
-    } catch (e) {
+    };
+
+    es.onerror = function() {
       setError(true);
-    }
+      es.close();
+      setTimeout(connectSSE, 3000);
+    };
   }
+
+  connectSSE();
+
+  // ── Humidifier control ────────────────────────────────────────────────────────
 
   async function setMoisture(on) {
     document.getElementById("btn-on").disabled  = true;
@@ -163,9 +218,6 @@
       updateStatus(!on);
     }
   }
-
-  fetchStatus();
-  setInterval(fetchStatus, 2000);
 </script>
 </body>
 </html>
