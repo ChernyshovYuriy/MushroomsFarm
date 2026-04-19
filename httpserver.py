@@ -94,10 +94,10 @@ class HttpServer(AbstractWorker):
 
             def do_POST(self) -> None:
                 if self.path == "/humd/stop":
-                    moisture_controller.turn_off()
+                    moisture_controller.turn_off(manual=True)
                     self._send_json({"ok": True, "moisturizer_on": False})
                 elif self.path == "/humd/start":
-                    moisture_controller.turn_on()
+                    moisture_controller.turn_on(manual=True)
                     self._send_json({"ok": True, "moisturizer_on": True})
                 else:
                     self.send_error(404)
