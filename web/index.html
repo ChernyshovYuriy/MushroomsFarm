@@ -168,7 +168,7 @@
     connect();
   })();
 
-  // ── Sensor data via Server-Sent Events (push, ~200 ms latency) ──────────────
+  // ── Sensor data: poll /status every second ───────────────────────────────────
 
   function updateStatus(on) {
     document.getElementById("status-dot").className = "status-dot " + (on ? "on" : "off");
@@ -181,26 +181,23 @@
     document.getElementById("error-banner").classList.toggle("visible", visible);
   }
 
-  function connectSSE() {
-    const es = new EventSource(API_BASE + "/events");
-
-    es.onmessage = function(e) {
-      const data = JSON.parse(e.data);
+  async function pollStatus() {
+    try {
+      const res  = await fetch(API_BASE + "/status", { cache: "no-store" });
+      if (!res.ok) throw new Error(res.status);
+      const data = await res.json();
       document.getElementById("temp-value").textContent = data.temp_c;
       document.getElementById("humd-value").textContent = data.humd;
       updateStatus(data.moisturizer_on);
       document.getElementById("last-update").textContent = "Updated " + new Date().toLocaleTimeString();
       setError(false);
-    };
-
-    es.onerror = function() {
+    } catch {
       setError(true);
-      es.close();
-      setTimeout(connectSSE, 3000);
-    };
+    }
   }
 
-  connectSSE();
+  pollStatus();
+  setInterval(pollStatus, 1000);
 
   // ── Humidifier control ────────────────────────────────────────────────────────
 
