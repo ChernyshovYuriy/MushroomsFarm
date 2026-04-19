@@ -1,220 +1,227 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🍄 Mushroom Farm</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>🍄 Mushroom Farm</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: #0f1a0f;
-      color: #d4e8d4;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-      padding: 20px;
-    }
+        body {
+          font-family: 'Segoe UI', system-ui, sans-serif;
+          background: #0f1a0f;
+          color: #d4e8d4;
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 20px;
+          padding: 20px;
+        }
 
-    h1 { font-size: 1.6rem; font-weight: 600; color: #7ec87e; letter-spacing: 0.05em; margin-top: 8px; }
+        h1 { font-size: 1.6rem; font-weight: 600; color: #7ec87e; letter-spacing: 0.05em; margin-top: 8px; }
 
-    .camera-wrap {
-      width: 100%; max-width: 860px;
-      border-radius: 12px; overflow: hidden;
-      border: 1px solid #2a3d2a; background: #111;
-      position: relative;
-    }
-    /*
-     * Direct MJPEG <img>: the browser decodes and paints each JPEG boundary
-     * as it arrives — no JS involved, no per-frame fetch round-trip.
-     * This is the lowest-latency approach available in a browser.
-     */
-    #camera-img { width: 100%; display: block; }
-    .cam-label {
-      position: absolute; top: 10px; left: 12px;
-      background: rgba(0,0,0,.55); color: #7ec87e;
-      font-size: 0.75rem; padding: 3px 8px;
-      border-radius: 20px; letter-spacing: 0.04em;
-    }
-    #cam-status {
-      position: absolute; top: 10px; right: 12px;
-      background: rgba(0,0,0,.55); color: #f08080;
-      font-size: 0.75rem; padding: 3px 8px;
-      border-radius: 20px; display: none;
-    }
+        .camera-wrap {
+          width: 100%; max-width: 860px;
+          border-radius: 12px; overflow: hidden;
+          border: 1px solid #2a3d2a; background: #111;
+          position: relative;
+        }
+        /*
+         * Direct MJPEG <img>: the browser decodes and paints each JPEG boundary
+         * as it arrives — no JS involved, no per-frame fetch round-trip.
+         * This is the lowest-latency approach available in a browser.
+         */
+        #camera-img { width: 100%; display: block; }
+        .cam-label {
+          position: absolute; top: 10px; left: 12px;
+          background: rgba(0,0,0,.55); color: #7ec87e;
+          font-size: 0.75rem; padding: 3px 8px;
+          border-radius: 20px; letter-spacing: 0.04em;
+        }
+        #cam-status {
+          position: absolute; top: 10px; right: 12px;
+          background: rgba(0,0,0,.55); color: #f08080;
+          font-size: 0.75rem; padding: 3px 8px;
+          border-radius: 20px; display: none;
+        }
 
-    .cards {
-      display: flex; gap: 16px; flex-wrap: wrap;
-      justify-content: center; width: 100%; max-width: 860px;
-    }
-    .card {
-      flex: 1 1 220px; background: #162016;
-      border: 1px solid #2a3d2a; border-radius: 12px;
-      padding: 20px 24px; display: flex; flex-direction: column; gap: 6px;
-    }
-    .card-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: #5a8a5a; }
-    .card-value { font-size: 3rem; font-weight: 700; color: #a8e0a8; line-height: 1; }
-    .card-unit  { font-size: 1rem; color: #5a8a5a; margin-left: 4px; }
+        .cards {
+          display: flex; gap: 16px; flex-wrap: wrap;
+          justify-content: center; width: 100%; max-width: 860px;
+        }
+        .card {
+          flex: 1 1 220px; background: #162016;
+          border: 1px solid #2a3d2a; border-radius: 12px;
+          padding: 20px 24px; display: flex; flex-direction: column; gap: 6px;
+        }
+        .card-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: #5a8a5a; }
+        .card-value { font-size: 3rem; font-weight: 700; color: #a8e0a8; line-height: 1; }
+        .card-unit  { font-size: 1rem; color: #5a8a5a; margin-left: 4px; }
 
-    .status-dot {
-      display: inline-block; width: 10px; height: 10px;
-      border-radius: 50%; margin-right: 6px;
-      background: #3a5a3a; transition: background 0.4s;
-    }
-    .status-dot.on  { background: #4caf50; box-shadow: 0 0 6px #4caf50; }
-    .card-status { font-size: 0.85rem; color: #7aaa7a; display: flex; align-items: center; margin-top: 4px; }
+        .status-dot {
+          display: inline-block; width: 10px; height: 10px;
+          border-radius: 50%; margin-right: 6px;
+          background: #3a5a3a; transition: background 0.4s;
+        }
+        .status-dot.on  { background: #4caf50; box-shadow: 0 0 6px #4caf50; }
+        .card-status { font-size: 0.85rem; color: #7aaa7a; display: flex; align-items: center; margin-top: 4px; }
 
-    .controls { display: flex; gap: 12px; margin-top: 8px; }
-    button {
-      cursor: pointer; border: none; border-radius: 8px;
-      font-size: 0.9rem; font-weight: 600; padding: 10px 22px;
-      transition: opacity 0.2s, transform 0.1s;
-    }
-    button:active { transform: scale(0.97); }
-    button:disabled { opacity: 0.4; cursor: default; }
-    .btn-on  { background: #2e7d32; color: #c8e6c9; }
-    .btn-on:hover:not(:disabled)  { background: #388e3c; }
-    .btn-off { background: #1b3a1e; color: #a5c8a5; border: 1px solid #2a4d2a; }
-    .btn-off:hover:not(:disabled) { background: #243f27; }
+        .controls { display: flex; gap: 12px; margin-top: 8px; }
+        button {
+          cursor: pointer; border: none; border-radius: 8px;
+          font-size: 0.9rem; font-weight: 600; padding: 10px 22px;
+          transition: opacity 0.2s, transform 0.1s;
+        }
+        button:active { transform: scale(0.97); }
+        button:disabled { opacity: 0.4; cursor: default; }
+        .btn-on  { background: #2e7d32; color: #c8e6c9; }
+        .btn-on:hover:not(:disabled)  { background: #388e3c; }
+        .btn-off { background: #1b3a1e; color: #a5c8a5; border: 1px solid #2a4d2a; }
+        .btn-off:hover:not(:disabled) { background: #243f27; }
 
-    .error-banner {
-      display: none; background: #3b1010; border: 1px solid #7b2020;
-      color: #f08080; border-radius: 8px; padding: 10px 16px;
-      font-size: 0.85rem; width: 100%; max-width: 860px; text-align: center;
-    }
-    .error-banner.visible { display: block; }
-    .last-update { font-size: 0.75rem; color: #3d6040; margin-top: auto; }
-  </style>
+        .error-banner {
+          display: none; background: #3b1010; border: 1px solid #7b2020;
+          color: #f08080; border-radius: 8px; padding: 10px 16px;
+          font-size: 0.85rem; width: 100%; max-width: 860px; text-align: center;
+        }
+        .error-banner.visible { display: block; }
+        .last-update { font-size: 0.75rem; color: #3d6040; margin-top: auto; }
+    </style>
 </head>
 <body>
 
 <h1>🍄 Mushroom Farm</h1>
 
 <div class="camera-wrap">
-  <span class="cam-label">● LIVE</span>
-  <span id="cam-status">⚠ Reconnecting…</span>
-  <!--
-    Direct MJPEG img: browser renders each frame the moment the JPEG
-    boundary arrives off the socket — no polling, no JS decode loop.
-    On error we reassign src with a fresh timestamp to force reconnect
-    and bypass any in-flight browser buffer.
-  -->
-  <img id="camera-img" src="" alt="camera stream" />
+    <span class="cam-label">● LIVE</span>
+    <span id="cam-status">⚠ Reconnecting…</span>
+    <!--
+      Direct MJPEG img: browser renders each frame the moment the JPEG
+      boundary arrives off the socket — no polling, no JS decode loop.
+      On error we reassign src with a fresh timestamp to force reconnect
+      and bypass any in-flight browser buffer.
+    -->
+    <canvas id="camera-img" style="width:100%;display:block;"></canvas>
 </div>
 
 <div id="error-banner" class="error-banner">⚠ Cannot reach controller — check network connection.</div>
 
 <div class="cards">
-  <div class="card">
-    <span class="card-label">Temperature</span>
-    <div><span id="temp-value" class="card-value">--</span><span class="card-unit">°C</span></div>
-    <span id="last-update" class="last-update">Waiting for data…</span>
-  </div>
-
-  <div class="card">
-    <span class="card-label">Humidity</span>
-    <div><span id="humd-value" class="card-value">--</span><span class="card-unit">%</span></div>
-    <span class="card-label" style="margin-top:4px">Target: 90 – 100 %</span>
-  </div>
-
-  <div class="card">
-    <span class="card-label">Humidifier</span>
-    <div class="card-status">
-      <span id="status-dot" class="status-dot off"></span>
-      <span id="status-text">Unknown</span>
+    <div class="card">
+        <span class="card-label">Temperature</span>
+        <div><span id="temp-value" class="card-value">--</span><span class="card-unit">°C</span></div>
+        <span id="last-update" class="last-update">Waiting for data…</span>
     </div>
-    <div class="controls">
-      <button id="btn-on"  class="btn-on"  onclick="setMoisture(true)">Turn On</button>
-      <button id="btn-off" class="btn-off" onclick="setMoisture(false)">Turn Off</button>
+
+    <div class="card">
+        <span class="card-label">Humidity</span>
+        <div><span id="humd-value" class="card-value">--</span><span class="card-unit">%</span></div>
+        <span class="card-label" style="margin-top:4px">Target: 90 – 100 %</span>
     </div>
-  </div>
+
+    <div class="card">
+        <span class="card-label">Humidifier</span>
+        <div class="card-status">
+            <span id="status-dot" class="status-dot off"></span>
+            <span id="status-text">Unknown</span>
+        </div>
+        <div class="controls">
+            <button id="btn-on" class="btn-on" onclick="setMoisture(true)">Turn On</button>
+            <button id="btn-off" class="btn-off" onclick="setMoisture(false)">Turn Off</button>
+        </div>
+    </div>
 </div>
 
 <script>
-  const API_BASE = window.location.origin;                       // http://pi:8080
-  const CAM_BASE = "http://" + window.location.hostname + ":8000";
+    const API_BASE = window.location.origin;                       // http://pi:8080
+    const CAM_BASE = "http://" + window.location.hostname + ":8000";
 
-  // ── Camera: direct MJPEG img ────────────────────────────────────────────────
-  // Assigning the MJPEG URL directly to <img src> is the fastest possible path:
-  // the browser decodes and paints each JPEG frame as bytes arrive, with no JS
-  // overhead or per-frame fetch round-trip.
-  // On error (network blip) we wait briefly, then reassign src with a fresh ?t=
-  // timestamp. This forces a brand-new TCP connection, flushing any stale buffered
-  // data the browser accumulated during the disconnect.
+    // ── Camera: snapshot fetch loop ──────────────────────────────────────────────
+    // MJPEG via <img src> never fires onload (the stream never "completes"), so
+    // the browser eventually calls onerror. Instead we fetch /snapshot in a loop:
+    // each call returns the latest JPEG frame immediately, we decode it, draw to
+    // canvas, then request the next one. This gives near-realtime video with no
+    // browser buffering artefacts and reliable error recovery.
 
-  (function startCamera() {
-    const img       = document.getElementById("camera-img");
-    const statusEl  = document.getElementById("cam-status");
-    let retryTimer  = null;
+    (function startCamera() {
+      const cvs      = document.getElementById("camera-img");
+      const statusEl = document.getElementById("cam-status");
+      const ctx      = cvs.getContext("2d");
 
-    function connect() {
-      img.src = CAM_BASE + "/camera?t=" + Date.now();
+      const SNAPSHOT = CAM_BASE + "/snapshot";
+
+      function nextFrame() {
+        const img = new Image();
+        img.onload = function() {
+          if (cvs.width  !== img.naturalWidth)  cvs.width  = img.naturalWidth;
+          if (cvs.height !== img.naturalHeight) cvs.height = img.naturalHeight;
+          ctx.drawImage(img, 0, 0);
+          URL.revokeObjectURL(img.src);
+          statusEl.style.display = "none";
+          requestAnimationFrame(nextFrame);
+        };
+        img.onerror = function() {
+          URL.revokeObjectURL(img.src);
+          statusEl.style.display = "block";
+          setTimeout(nextFrame, 1000);
+        };
+        fetch(SNAPSHOT, { cache: "no-store" })
+          .then(r => r.ok ? r.blob() : Promise.reject())
+          .then(blob => { img.src = URL.createObjectURL(blob); })
+          .catch(() => { statusEl.style.display = "block"; setTimeout(nextFrame, 1000); });
+      }
+
+      nextFrame();
+    })();
+
+    // ── Sensor data: poll /status every second ───────────────────────────────────
+
+    function updateStatus(on) {
+      document.getElementById("status-dot").className = "status-dot " + (on ? "on" : "off");
+      document.getElementById("status-text").textContent = on ? "Running" : "Stopped";
+      document.getElementById("btn-on").disabled  =  on;
+      document.getElementById("btn-off").disabled = !on;
     }
 
-    img.onload = function() {
-      statusEl.style.display = "none";
-    };
-
-    img.onerror = function() {
-      statusEl.style.display = "block";
-      img.src = "";                          // abort pending connection
-      clearTimeout(retryTimer);
-      retryTimer = setTimeout(connect, 2000);
-    };
-
-    connect();
-  })();
-
-  // ── Sensor data: poll /status every second ───────────────────────────────────
-
-  function updateStatus(on) {
-    document.getElementById("status-dot").className = "status-dot " + (on ? "on" : "off");
-    document.getElementById("status-text").textContent = on ? "Running" : "Stopped";
-    document.getElementById("btn-on").disabled  =  on;
-    document.getElementById("btn-off").disabled = !on;
-  }
-
-  function setError(visible) {
-    document.getElementById("error-banner").classList.toggle("visible", visible);
-  }
-
-  async function pollStatus() {
-    try {
-      const res  = await fetch(API_BASE + "/status", { cache: "no-store" });
-      if (!res.ok) throw new Error(res.status);
-      const data = await res.json();
-      document.getElementById("temp-value").textContent = data.temp_c;
-      document.getElementById("humd-value").textContent = data.humd;
-      updateStatus(data.moisturizer_on);
-      document.getElementById("last-update").textContent = "Updated " + new Date().toLocaleTimeString();
-      setError(false);
-    } catch {
-      setError(true);
+    function setError(visible) {
+      document.getElementById("error-banner").classList.toggle("visible", visible);
     }
-  }
 
-  pollStatus();
-  setInterval(pollStatus, 1000);
-
-  // ── Humidifier control ────────────────────────────────────────────────────────
-
-  async function setMoisture(on) {
-    document.getElementById("btn-on").disabled  = true;
-    document.getElementById("btn-off").disabled = true;
-    try {
-      const res  = await fetch(`${API_BASE}/humd/${on ? "start" : "stop"}`, { method: "POST" });
-      if (!res.ok) throw new Error(res.status);
-      const data = await res.json();
-      updateStatus(data.moisturizer_on);
-      setError(false);
-    } catch {
-      setError(true);
-      updateStatus(!on);
+    async function pollStatus() {
+      try {
+        const res  = await fetch(API_BASE + "/status", { cache: "no-store" });
+        if (!res.ok) throw new Error(res.status);
+        const data = await res.json();
+        document.getElementById("temp-value").textContent = data.temp_c;
+        document.getElementById("humd-value").textContent = data.humd;
+        updateStatus(data.moisturizer_on);
+        document.getElementById("last-update").textContent = "Updated " + new Date().toLocaleTimeString();
+        setError(false);
+      } catch {
+        setError(true);
+      }
     }
-  }
+
+    pollStatus();
+    setInterval(pollStatus, 1000);
+
+    // ── Humidifier control ────────────────────────────────────────────────────────
+
+    async function setMoisture(on) {
+      document.getElementById("btn-on").disabled  = true;
+      document.getElementById("btn-off").disabled = true;
+      try {
+        const res  = await fetch(`${API_BASE}/humd/${on ? "start" : "stop"}`, { method: "POST" });
+        if (!res.ok) throw new Error(res.status);
+        const data = await res.json();
+        updateStatus(data.moisturizer_on);
+        setError(false);
+      } catch {
+        setError(true);
+        updateStatus(!on);
+      }
+    }
 </script>
 </body>
 </html>
