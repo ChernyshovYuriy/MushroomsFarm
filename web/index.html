@@ -137,6 +137,9 @@
     const API_BASE = window.location.origin;                       // http://pi:8080
     const CAM_BASE = "http://" + window.location.hostname + ":8000";
 
+    const SENSOR_POLL_MS = 2000;
+    const CAMERA_FRAME_MS = 2000;
+
     // ── Camera: snapshot fetch loop ──────────────────────────────────────────────
     // MJPEG via <img src> never fires onload (the stream never "completes"), so
     // the browser eventually calls onerror. Instead we fetch /snapshot in a loop:
@@ -151,6 +154,10 @@
 
       const SNAPSHOT = CAM_BASE + "/snapshot";
 
+      function queueNextFrame(delayMs = CAMERA_FRAME_MS) {
+        setTimeout(nextFrame, delayMs);
+      }
+
       function nextFrame() {
         const img = new Image();
         img.onload = function() {
@@ -159,23 +166,23 @@
           ctx.drawImage(img, 0, 0);
           URL.revokeObjectURL(img.src);
           statusEl.style.display = "none";
-          requestAnimationFrame(nextFrame);
+          queueNextFrame();
         };
         img.onerror = function() {
           URL.revokeObjectURL(img.src);
           statusEl.style.display = "block";
-          setTimeout(nextFrame, 1000);
+          queueNextFrame(1000);
         };
         fetch(SNAPSHOT, { cache: "no-store" })
           .then(r => r.ok ? r.blob() : Promise.reject())
           .then(blob => { img.src = URL.createObjectURL(blob); })
-          .catch(() => { statusEl.style.display = "block"; setTimeout(nextFrame, 1000); });
+          .catch(() => { statusEl.style.display = "block"; queueNextFrame(1000); });
       }
 
       nextFrame();
     })();
 
-    // ── Sensor data: poll /status every second ───────────────────────────────────
+    // ── Sensor data: poll /status every 2 seconds ────────────────────────────────
 
     function updateStatus(on) {
       document.getElementById("status-dot").className = "status-dot " + (on ? "on" : "off");
@@ -204,7 +211,7 @@
     }
 
     pollStatus();
-    setInterval(pollStatus, 1000);
+    setInterval(pollStatus, SENSOR_POLL_MS);
 
     // ── Humidifier control ────────────────────────────────────────────────────────
 
