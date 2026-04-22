@@ -14,8 +14,13 @@ WEB_DIR = os.path.join(os.path.dirname(__file__), "web")
 class HttpServer(AbstractWorker):
     """HTTP server: serves the web dashboard and exposes the sensor/control API."""
 
-    def __init__(self, moisture_controller: MoistureController, sensor_data: SensorData) -> None:
-        super().__init__("HTTP Server", 0, None, self._on_stop)
+    def __init__(
+        self,
+        moisture_controller: MoistureController,
+        sensor_data: SensorData,
+        loop_delay: float = 0.5,
+    ) -> None:
+        super().__init__("HTTP Server", loop_delay, None, self._on_stop)
         self._server = HTTPServer(
             ('', PORT_NUMBER),
             self._create_handler(moisture_controller, sensor_data),

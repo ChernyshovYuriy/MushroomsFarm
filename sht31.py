@@ -13,8 +13,8 @@ SHT31_BUS = 1
 class SHT31(AbstractWorker):
     """Reads temperature and humidity from the SHT31 sensor over I2C."""
 
-    def __init__(self, shared_data: SensorData) -> None:
-        super().__init__("SHT31", 0, None, None)
+    def __init__(self, shared_data: SensorData, loop_delay: float = 2.0) -> None:
+        super().__init__("SHT31", loop_delay, None, None)
         self.shared_data = shared_data
         self.bus = smbus.SMBus(SHT31_BUS)
 
@@ -30,4 +30,3 @@ class SHT31(AbstractWorker):
             self.shared_data.temp_c,
             self.shared_data.humd,
         ))
-        sleep(1)

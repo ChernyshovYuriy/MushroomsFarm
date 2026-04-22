@@ -1,5 +1,6 @@
 import signal
 import threading
+from dataclasses import dataclass
 
 from camera import Camera
 from httpserver import HttpServer
@@ -8,16 +9,31 @@ from shared_data import SensorData
 from sht31 import SHT31
 
 
+@dataclass(frozen=True)
+class LoopDelayConfig:
+    moisture_controller: float = 1.0
+    sht31: float = 2.0
+    camera: float = 2.0
+    http_server: float = 0.5
+
+
 class Controller:
     """Orchestrates all subsystems of the Mushroom Farm controller."""
 
-    def __init__(self) -> None:
+    def __init__(self, loop_delays: LoopDelayConfig | None = None) -> None:
         print("Init controller")
+        loop_delays = loop_delays or LoopDelayConfig()
         sensor_data = SensorData()
-        self.moisture_controller = MoistureController(sensor_data)
-        self.sht31 = SHT31(sensor_data)
-        self.camera = Camera()
-        self.server = HttpServer(self.moisture_controller, sensor_data)
+        self.moisture_controller = MoistureController(
+            sensor_data, loop_delay=loop_delays.moisture_controller
+        )
+        self.sht31 = SHT31(sensor_data, loop_delay=loop_delays.sht31)
+        self.camera = Camera(loop_delay=loop_delays.camera)
+        self.server = HttpServer(
+            self.moisture_controller,
+            sensor_data,
+            loop_delay=loop_delays.http_server,
+        )
 
     def start(self) -> None:
         self.moisture_controller.start()

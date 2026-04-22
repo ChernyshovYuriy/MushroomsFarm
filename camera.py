@@ -32,7 +32,7 @@ class _StreamingOutput(io.BufferedIOBase):
 class Camera(AbstractWorker):
     """Captures MJPEG video from Picamera2 and serves it over HTTP."""
 
-    def __init__(self) -> None:
+    def __init__(self, loop_delay: float = 2.0) -> None:
         self._encoder = JpegEncoder()
         self._output = _StreamingOutput()
         self._camera = Picamera2()
@@ -41,7 +41,7 @@ class Camera(AbstractWorker):
                 main={"size": (CAMERA_WIDTH, CAMERA_HEIGHT)}
             )
         )
-        super().__init__("Camera", 0, None, self._on_stop)
+        super().__init__("Camera", loop_delay, None, self._on_stop)
 
     def _on_stop(self) -> None:
         try:

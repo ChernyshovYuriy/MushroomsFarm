@@ -31,8 +31,8 @@ class MoistureController(AbstractWorker):
       within range                → keep current state
     """
 
-    def __init__(self, shared_data: SensorData) -> None:
-        super().__init__("Moisture Controller", 0, None, None)
+    def __init__(self, shared_data: SensorData, loop_delay: float = 1.0) -> None:
+        super().__init__("Moisture Controller", loop_delay, None, None)
         self.shared_data = shared_data
         self._state = MoistureState.NONE
         self._manual_off = False  # True = user explicitly turned off, skip auto-on
@@ -68,8 +68,6 @@ class MoistureController(AbstractWorker):
             if self._manual_off:
                 print("[MoistureController] Humidity in range ({0}%) — clearing manual override".format(humd))
                 self._manual_off = False
-
-        sleep(1)
 
     def stop(self) -> None:
         super().stop()
