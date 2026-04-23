@@ -20,7 +20,9 @@ class SHT31(AbstractWorker):
 
     def runnable(self) -> None:
         self.bus.write_i2c_block_data(SHT31_I2C_ADDRESS, 0x2C, [0x06])
-        sleep(0.5)
+        # SHT31 measurement time for this command is in milliseconds, not hundreds
+        # of milliseconds. Keeping this short avoids stale sensor updates.
+        sleep(0.05)
         data = self.bus.read_i2c_block_data(SHT31_I2C_ADDRESS, 0x00, 6)
         raw_temp = data[0] * 256 + data[1]
         self.shared_data.temp_c = int(-45 + (175 * raw_temp / 65535.0))

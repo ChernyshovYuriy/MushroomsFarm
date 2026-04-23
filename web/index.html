@@ -102,7 +102,7 @@
       On error we reassign src with a fresh timestamp to force reconnect
       and bypass any in-flight browser buffer.
     -->
-    <canvas id="camera-img" style="width:100%;display:block;"></canvas>
+    <img id="camera-img" style="width:100%;display:block;" alt="Live camera feed"/>
 </div>
 
 <div id="error-banner" class="error-banner">⚠ Cannot reach controller — check network connection.</div>
@@ -137,49 +137,31 @@
     const API_BASE = window.location.origin;                       // http://pi:8080
     const CAM_BASE = "http://" + window.location.hostname + ":8000";
 
-    const SENSOR_POLL_MS = 2000;
-    const CAMERA_FRAME_MS = 2000;
+    const SENSOR_POLL_MS = 1000;
 
-    // ── Camera: snapshot fetch loop ──────────────────────────────────────────────
-    // MJPEG via <img src> never fires onload (the stream never "completes"), so
-    // the browser eventually calls onerror. Instead we fetch /snapshot in a loop:
-    // each call returns the latest JPEG frame immediately, we decode it, draw to
-    // canvas, then request the next one. This gives near-realtime video with no
-    // browser buffering artefacts and reliable error recovery.
+    // ── Camera: direct MJPEG stream ──────────────────────────────────────────────
+    // For low-powered Raspberry Pi hardware this is significantly lighter than a
+    // repeated fetch/decode/draw loop of snapshots.
 
     (function startCamera() {
-      const cvs      = document.getElementById("camera-img");
+      const imgEl    = document.getElementById("camera-img");
       const statusEl = document.getElementById("cam-status");
-      const ctx      = cvs.getContext("2d");
+      const STREAM = CAM_BASE + "/camera";
 
-      const SNAPSHOT = CAM_BASE + "/snapshot";
-
-      function queueNextFrame(delayMs = CAMERA_FRAME_MS) {
-        setTimeout(nextFrame, delayMs);
+      function reconnect(delayMs = 1000) {
+        setTimeout(() => {
+          imgEl.src = STREAM + "?t=" + Date.now();
+        }, delayMs);
       }
 
-      function nextFrame() {
-        const img = new Image();
-        img.onload = function() {
-          if (cvs.width  !== img.naturalWidth)  cvs.width  = img.naturalWidth;
-          if (cvs.height !== img.naturalHeight) cvs.height = img.naturalHeight;
-          ctx.drawImage(img, 0, 0);
-          URL.revokeObjectURL(img.src);
-          statusEl.style.display = "none";
-          queueNextFrame();
-        };
-        img.onerror = function() {
-          URL.revokeObjectURL(img.src);
-          statusEl.style.display = "block";
-          queueNextFrame(1000);
-        };
-        fetch(SNAPSHOT, { cache: "no-store" })
-          .then(r => r.ok ? r.blob() : Promise.reject())
-          .then(blob => { img.src = URL.createObjectURL(blob); })
-          .catch(() => { statusEl.style.display = "block"; queueNextFrame(1000); });
-      }
-
-      nextFrame();
+      imgEl.onload = function() {
+        statusEl.style.display = "none";
+      };
+      imgEl.onerror = function() {
+        statusEl.style.display = "block";
+        reconnect(1000);
+      };
+      reconnect(0);
     })();
 
     // ── Sensor data: poll /status every 2 seconds ────────────────────────────────

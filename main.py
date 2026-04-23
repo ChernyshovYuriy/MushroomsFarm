@@ -12,7 +12,7 @@ from sht31 import SHT31
 @dataclass(frozen=True)
 class LoopDelayConfig:
     moisture_controller: float = 1.0
-    sht31: float = 2.0
+    sht31: float = 1.0
     camera: float = 2.0
     http_server: float = 0.5
 
