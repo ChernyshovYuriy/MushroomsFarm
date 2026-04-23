@@ -26,13 +26,34 @@
           border-radius: 12px; overflow: hidden;
           border: 1px solid #2a3d2a; background: #111;
           position: relative;
+          aspect-ratio: 16 / 9;
+          min-height: 220px;
         }
         /*
          * Direct MJPEG <img>: the browser decodes and paints each JPEG boundary
          * as it arrives — no JS involved, no per-frame fetch round-trip.
          * This is the lowest-latency approach available in a browser.
          */
-        #camera-img { width: 100%; display: block; }
+        #camera-img {
+          width: 100%;
+          height: 100%;
+          display: block;
+          object-fit: cover;
+        }
+        .camera-placeholder {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #8ea88e;
+          background: radial-gradient(circle at center, #1a291a 0%, #101810 65%);
+          font-size: 0.95rem;
+          letter-spacing: 0.03em;
+          transition: opacity 0.2s;
+          pointer-events: none;
+        }
+        .camera-placeholder.hidden { opacity: 0; }
         .cam-label {
           position: absolute; top: 10px; left: 12px;
           background: rgba(0,0,0,.55); color: #7ec87e;
@@ -96,6 +117,7 @@
 <div class="camera-wrap">
     <span class="cam-label">● LIVE</span>
     <span id="cam-status">⚠ Reconnecting…</span>
+    <span id="camera-placeholder" class="camera-placeholder">Connecting to camera…</span>
     <!--
       Direct MJPEG img: browser renders each frame the moment the JPEG
       boundary arrives off the socket — no polling, no JS decode loop.
@@ -146,6 +168,7 @@
     (function startCamera() {
       const imgEl    = document.getElementById("camera-img");
       const statusEl = document.getElementById("cam-status");
+      const placeholderEl = document.getElementById("camera-placeholder");
       const STREAM = CAM_BASE + "/camera";
 
       function reconnect(delayMs = 1000) {
@@ -156,9 +179,11 @@
 
       imgEl.onload = function() {
         statusEl.style.display = "none";
+        placeholderEl.classList.add("hidden");
       };
       imgEl.onerror = function() {
         statusEl.style.display = "block";
+        placeholderEl.classList.remove("hidden");
         reconnect(1000);
       };
       reconnect(0);
