@@ -24,8 +24,8 @@ class MoistureController(AbstractWorker):
 
     def runnable(self):
         print("[{0}] Moisture controller - temp:{1}, humd:{2}".format(threading.current_thread().name,
-                                                                 self.shared_data.temp_c,
-                                                                 self.shared_data.humd))
+                                                                      self.shared_data.temp_c,
+                                                                      self.shared_data.humd))
         if 90 <= self.shared_data.humd <= 100:
             self.turn_moisture_off()
         else:

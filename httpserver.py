@@ -15,11 +15,11 @@ class HttpServer(AbstractWorker):
     """HTTP server: serves the web dashboard and exposes the sensor/control API."""
 
     def __init__(
-        self,
-        moisture_controller: MoistureController,
-        sensor_data: SensorData,
-        camera_output=None,
-        loop_delay: float = 0.5,
+            self,
+            moisture_controller: MoistureController,
+            sensor_data: SensorData,
+            camera_output=None,
+            loop_delay: float = 0.5,
     ) -> None:
         super().__init__("HTTP Server", loop_delay, None, self._on_stop)
         self._server = HTTPServer(
