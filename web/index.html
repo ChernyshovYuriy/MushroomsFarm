@@ -165,30 +165,44 @@
     // For low-powered Raspberry Pi hardware this is significantly lighter than a
     // repeated fetch/decode/draw loop of snapshots.
 
+    // Snapshot polling: fetch a fresh JPEG every 2 s instead of holding an
+    // open MJPEG connection. On Pi 3 this avoids encoder backpressure that
+    // causes the MJPEG stream to stall and the browser to show a blank frame.
     (function startCamera() {
-      const imgEl    = document.getElementById("camera-img");
-      const statusEl = document.getElementById("cam-status");
+      const imgEl         = document.getElementById("camera-img");
+      const statusEl      = document.getElementById("cam-status");
       const placeholderEl = document.getElementById("camera-placeholder");
-      const STREAM = CAM_BASE + "/camera";
+      const SNAPSHOT      = CAM_BASE + "/snapshot";
+      const POLL_MS       = 2000;
+      let timer           = null;
+      let firstFrame      = true;
 
-      function reconnect(delayMs = 1000) {
-        setTimeout(() => {
-          imgEl.src = STREAM + "?t=" + Date.now();
-        }, delayMs);
+      function fetchSnapshot() {
+        const url = SNAPSHOT + "?t=" + Date.now();
+        fetch(url, { cache: "no-store" })
+          .then(r => {
+            if (!r.ok) throw new Error(r.status);
+            return r.blob();
+          })
+          .then(blob => {
+            const prev = imgEl.src;
+            imgEl.src = URL.createObjectURL(blob);
+            if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+            if (firstFrame) {
+              firstFrame = false;
+              statusEl.style.display = "none";
+              placeholderEl.classList.add("hidden");
+            }
+            timer = setTimeout(fetchSnapshot, POLL_MS);
+          })
+          .catch(() => {
+            statusEl.style.display = "block";
+            placeholderEl.classList.remove("hidden");
+            timer = setTimeout(fetchSnapshot, 3000);
+          });
       }
 
-      // onloadstart fires as soon as the browser begins receiving the MJPEG
-      // stream — unlike onload which never fires for infinite multipart streams.
-      imgEl.onloadstart = function() {
-        statusEl.style.display = "none";
-        placeholderEl.classList.add("hidden");
-      };
-      imgEl.onerror = function() {
-        statusEl.style.display = "block";
-        placeholderEl.classList.remove("hidden");
-        reconnect(1500);
-      };
-      reconnect(0);
+      fetchSnapshot();
     })();
 
     // ── Sensor data: poll /status every 2 seconds ────────────────────────────────

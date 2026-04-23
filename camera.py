@@ -12,8 +12,8 @@ from picamera2.outputs import FileOutput
 from abs_worker import AbstractWorker
 
 CAMERA_PORT = 8000
-CAMERA_WIDTH = 1280
-CAMERA_HEIGHT = 720
+CAMERA_WIDTH = 640
+CAMERA_HEIGHT = 480
 
 
 class _StreamingOutput(io.BufferedIOBase):
@@ -54,7 +54,7 @@ class Camera(AbstractWorker):
             threading.current_thread().name, CAMERA_PORT,
         ))
         self._camera.start_recording(
-            self._encoder, FileOutput(self._output), quality=Quality.HIGH
+            self._encoder, FileOutput(self._output), quality=Quality.MEDIUM
         )
         output = self._output
 
