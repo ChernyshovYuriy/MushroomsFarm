@@ -11,8 +11,8 @@ from sht31 import SHT31
 
 @dataclass(frozen=True)
 class LoopDelayConfig:
-    moisture_controller: float = 1.0
-    sht31: float = 1.0
+    moisture_controller: float = 2.0   # humidity changes slowly, 2s is sufficient
+    sht31: float = 0                   # sleep is inside SHT31.runnable()
     camera: float = 2.0
     http_server: float = 0.5
 

@@ -177,14 +177,16 @@
         }, delayMs);
       }
 
-      imgEl.onload = function() {
+      // onloadstart fires as soon as the browser begins receiving the MJPEG
+      // stream — unlike onload which never fires for infinite multipart streams.
+      imgEl.onloadstart = function() {
         statusEl.style.display = "none";
         placeholderEl.classList.add("hidden");
       };
       imgEl.onerror = function() {
         statusEl.style.display = "block";
         placeholderEl.classList.remove("hidden");
-        reconnect(1000);
+        reconnect(1500);
       };
       reconnect(0);
     })();
