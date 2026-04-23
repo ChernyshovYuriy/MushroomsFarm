@@ -12,7 +12,7 @@ from abs_worker import AbstractWorker
 CAMERA_PORT = 8000
 CAMERA_WIDTH = 640
 CAMERA_HEIGHT = 480
-JPEG_QUALITY = 70   # 0-95; 70 is fine for monitoring, saves ~40% CPU vs default
+JPEG_QUALITY = 70  # 0-95; 70 is fine for monitoring, saves ~40% CPU vs default
 
 
 class Camera(AbstractWorker):
@@ -25,12 +25,16 @@ class Camera(AbstractWorker):
 
     def __init__(self, loop_delay: float = 2.0) -> None:
         self._camera = Picamera2()
-        self._camera.configure(
-            self._camera.create_preview_configuration(
-                main={"size": (CAMERA_WIDTH, CAMERA_HEIGHT), "format": "RGB888"}
-            )
+        # Cap to 1 fps: the ISP runs at whatever framerate is configured.
+        # At 30fps it burns ~40% CPU processing frames nobody reads.
+        # 1fps = one frame per second, matching our 2s snapshot poll.
+        # FrameDurationLimits is in microseconds: 1 000 000 µs = 1 fps.
+        cfg = self._camera.create_preview_configuration(
+            main={"size": (CAMERA_WIDTH, CAMERA_HEIGHT), "format": "RGB888"},
+            controls={"FrameDurationLimits": (1_000_000, 1_000_000)},
         )
-        self._lock = Lock()   # serialise concurrent snapshot requests
+        self._camera.configure(cfg)
+        self._lock = Lock()
         super().__init__("Camera", loop_delay, None, self._on_stop)
 
     def _on_stop(self) -> None:
