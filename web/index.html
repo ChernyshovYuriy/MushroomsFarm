@@ -156,29 +156,20 @@
 </div>
 
 <script>
-    const API_BASE = window.location.origin;                       // http://pi:8080
-    const CAM_BASE = "http://" + window.location.hostname + ":8000";
-
+    const API_BASE = window.location.origin;   // http://pi:8080
     const SENSOR_POLL_MS = 1000;
 
-    // ── Camera: direct MJPEG stream ──────────────────────────────────────────────
-    // For low-powered Raspberry Pi hardware this is significantly lighter than a
-    // repeated fetch/decode/draw loop of snapshots.
-
-    // Snapshot polling: fetch a fresh JPEG every 2 s instead of holding an
-    // open MJPEG connection. On Pi 3 this avoids encoder backpressure that
-    // causes the MJPEG stream to stall and the browser to show a blank frame.
+    // ── Camera: snapshot polling via same-origin /snapshot ───────────────────────
+    // Fetched from port 8080 (same as the dashboard) — no CORS, no second port.
     (function startCamera() {
       const imgEl         = document.getElementById("camera-img");
       const statusEl      = document.getElementById("cam-status");
       const placeholderEl = document.getElementById("camera-placeholder");
-      const SNAPSHOT      = CAM_BASE + "/snapshot";
       const POLL_MS       = 2000;
-      let timer           = null;
       let firstFrame      = true;
 
       function fetchSnapshot() {
-        const url = SNAPSHOT + "?t=" + Date.now();
+        const url = API_BASE + "/snapshot?t=" + Date.now();
         fetch(url, { cache: "no-store" })
           .then(r => {
             if (!r.ok) throw new Error(r.status);
@@ -193,12 +184,12 @@
               statusEl.style.display = "none";
               placeholderEl.classList.add("hidden");
             }
-            timer = setTimeout(fetchSnapshot, POLL_MS);
+            setTimeout(fetchSnapshot, POLL_MS);
           })
           .catch(() => {
             statusEl.style.display = "block";
             placeholderEl.classList.remove("hidden");
-            timer = setTimeout(fetchSnapshot, 3000);
+            setTimeout(fetchSnapshot, 3000);
           });
       }
 

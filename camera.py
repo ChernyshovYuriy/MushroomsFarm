@@ -34,7 +34,7 @@ class Camera(AbstractWorker):
 
     def __init__(self, loop_delay: float = 2.0) -> None:
         self._encoder = JpegEncoder()
-        self._output = _StreamingOutput()
+        self.output = _StreamingOutput()   # public: shared with HttpServer
         self._camera = Picamera2()
         self._camera.configure(
             self._camera.create_video_configuration(
@@ -54,9 +54,9 @@ class Camera(AbstractWorker):
             threading.current_thread().name, CAMERA_PORT,
         ))
         self._camera.start_recording(
-            self._encoder, FileOutput(self._output), quality=Quality.MEDIUM
+            self._encoder, FileOutput(self.output), quality=Quality.MEDIUM
         )
-        output = self._output
+        output = self.output
 
         class StreamingHandler(server.BaseHTTPRequestHandler):
 

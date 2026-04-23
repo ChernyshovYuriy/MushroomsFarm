@@ -18,15 +18,16 @@ class HttpServer(AbstractWorker):
         self,
         moisture_controller: MoistureController,
         sensor_data: SensorData,
+        camera_output=None,
         loop_delay: float = 0.5,
     ) -> None:
         super().__init__("HTTP Server", loop_delay, None, self._on_stop)
         self._server = HTTPServer(
             ('', PORT_NUMBER),
-            self._create_handler(moisture_controller, sensor_data),
+            self._create_handler(moisture_controller, sensor_data, camera_output),
         )
 
-    def _create_handler(self, moisture_controller: MoistureController, sensor_data: SensorData):
+    def _create_handler(self, moisture_controller, sensor_data, camera_output):
 
         class ConnectionHandler(BaseHTTPRequestHandler):
 
@@ -85,6 +86,23 @@ class HttpServer(AbstractWorker):
                     self._send_text(str(sensor_data.temp_c))
                 elif self.path == "/humd":
                     self._send_text(str(sensor_data.humd))
+                elif self.path.startswith("/snapshot"):
+                    if camera_output is None:
+                        self.send_error(503, "Camera not available")
+                        return
+                    with camera_output.condition:
+                        has_frame = camera_output.condition.wait(timeout=3)
+                        frame = camera_output.frame
+                    if not has_frame or frame is None:
+                        self.send_error(503, "No frame available")
+                        return
+                    self.send_response(200)
+                    self.send_header("Content-Type", "image/jpeg")
+                    self.send_header("Content-Length", str(len(frame)))
+                    self.send_header("Cache-Control", "no-cache, no-store")
+                    self.send_header("Access-Control-Allow-Origin", "*")
+                    self.end_headers()
+                    self.wfile.write(frame)
                 # Serve web dashboard
                 elif self.path in ("/", "/index.html"):
                     index = os.path.join(WEB_DIR, "index.html")
