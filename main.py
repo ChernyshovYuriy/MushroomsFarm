@@ -32,7 +32,7 @@ class Controller:
         self.server = HttpServer(
             self.moisture_controller,
             sensor_data,
-            camera_output=self.camera.output,
+            camera_output=self.camera,
             loop_delay=loop_delays.http_server,
         )
 

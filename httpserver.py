@@ -90,11 +90,9 @@ class HttpServer(AbstractWorker):
                     if camera_output is None:
                         self.send_error(503, "Camera not available")
                         return
-                    with camera_output.condition:
-                        has_frame = camera_output.condition.wait(timeout=3)
-                        frame = camera_output.frame
-                    if not has_frame or frame is None:
-                        self.send_error(503, "No frame available")
+                    frame = camera_output.capture_jpeg()
+                    if frame is None:
+                        self.send_error(503, "Capture failed")
                         return
                     self.send_response(200)
                     self.send_header("Content-Type", "image/jpeg")
