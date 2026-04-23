@@ -1,48 +1,82 @@
 # 🍄 MushroomsFarm
 
-Monitor and control your mushroom farm using a Raspberry Pi. The system reads temperature and humidity from an SHT31 sensor, automatically controls a USB humidifier via GPIO, streams a live camera feed, and exposes everything through a local web dashboard.
+A Raspberry Pi controller for automated mushroom cultivation. It maintains optimal growing conditions by monitoring temperature and humidity via an SHT31 sensor, automatically driving a USB humidifier when humidity drops below target, and giving you a live camera view and manual controls through a local web dashboard — all running on a Pi 3 with under 10% CPU at idle.
+
+## How It Works
+
+Four threads run concurrently and share sensor state through a thread-safe data container:
+
+- **SHT31** reads temperature and humidity from the sensor every 1.5 s over I2C and writes results to shared memory.
+- **MoistureController** checks the latest humidity reading every 2 s and switches the humidifier on (< 90% RH) or off (≥ 90% RH) via GPIO. Manual overrides from the web UI are respected until the humidity crosses the opposite threshold, at which point automatic control resumes.
+- **Camera** starts the Pi camera in preview mode at 1 fps and serves JPEG snapshots on demand at `/snapshot`. Running at 1 fps rather than the default 30 fps cuts ISP CPU usage by ~80%.
+- **HttpServer** serves the web dashboard and REST API on port 8080. Snapshot requests are proxied through this same port, avoiding any cross-origin browser issues.
 
 ## Hardware
 
 | Component | Details |
 |---|---|
-| Board | Raspberry Pi (tested on Pi 3/4) |
-| Sensor | SHT31 (I2C, address `0x44`, bus 1) |
-| Humidifier | USB power switch module via GPIO pins 26 (power) and 13 (trigger) |
+| Board | Raspberry Pi 3 (also works on Pi 4) |
+| Sensor | SHT31 temperature/humidity — I2C, address `0x44`, bus 1 |
+| Humidifier | USB Power Switch Module — GPIO 26 (power), GPIO 13 (trigger) |
 | Camera | Raspberry Pi Camera Module (Picamera2) |
 
-## Software Requirements
+Wiring reference: [USB Power Switch Module](https://thepihut.com/products/usb-power-switch-module) · [SHT31 example](https://github.com/machineshopuk/SHT31/blob/master/SHT31.py)
 
-Install dependencies on the Pi:
+## Project Structure
+
+```
+├── main.py                   # Entry point — wires and starts all subsystems
+├── abs_worker.py             # Abstract base: runs any subclass in its own thread
+├── shared_data.py            # Thread-safe container for sensor readings
+├── sht31.py                  # SHT31 sensor reader (I2C)
+├── moisture_controller.py    # GPIO humidifier controller with manual override
+├── camera.py                 # On-demand JPEG capture, served on port 8000
+├── httpserver.py             # REST API + dashboard server on port 8080
+├── gpio_pins_distribution.py # GPIO pin constants
+├── service/
+│   └── mushrooms.service     # systemd unit for auto-start on boot
+└── web/
+    └── index.html            # Web dashboard
+```
+
+## Software Requirements
 
 ```bash
 pip install RPi.GPIO smbus picamera2
 ```
 
-## Project Structure
-
-```
-├── main.py                  # Entry point — starts all subsystems
-├── abs_worker.py            # Abstract base class for threaded workers
-├── shared_data.py           # Thread-safe sensor data container
-├── sht31.py                 # SHT31 temperature/humidity sensor reader
-├── moisture_controller.py   # GPIO humidifier controller
-├── httpserver.py            # HTTP API server (port 8080)
-├── camera.py                # MJPEG camera stream server (port 8000)
-├── gpio_pins_distribution.py
-└── web/
-    └── index.html           # Web dashboard (open in any browser)
-```
-
-## Network Setup
-
-The Pi is assigned a static IP. To configure it (example using NetworkManager on Pi OS Bookworm):
+## Deploying to the Pi
 
 ```bash
-# Find your connection name
-sudo nmcli -p connection show
+# Copy source
+scp *.py yurii@192.168.4.45:/home/yurii/MushroomsFarm/
+scp web/index.html yurii@192.168.4.45:/home/yurii/MushroomsFarm/web/
 
-# Set static IP (replace "Oxio" with your connection name)
+# SSH in and run
+ssh yurii@192.168.4.45
+cd /home/yurii/MushroomsFarm
+python main.py
+```
+
+Stop with `Ctrl+C` or `SIGTERM` — both are handled cleanly.
+
+## Auto-start on Boot (systemd)
+
+```bash
+sudo cp service/mushrooms.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable mushrooms
+sudo systemctl start mushrooms
+
+# Check status / logs
+sudo systemctl status mushrooms
+journalctl -u mushrooms -f
+```
+
+## Static IP Setup
+
+```bash
+sudo nmcli -p connection show                                          # find connection name
 sudo nmcli c mod "Oxio" ipv4.addresses 192.168.4.45/24 ipv4.method manual
 sudo nmcli c mod "Oxio" ipv4.gateway 192.168.0.1
 sudo nmcli c mod "Oxio" ipv4.dns "8.8.8.8,8.8.4.4"
@@ -51,85 +85,83 @@ sudo reboot
 
 Reference: [Set a static IP on Pi OS Bookworm](https://www.abelectronics.co.uk/kb/article/31/set-a-static-ip-address-on-raspberry-pi-os-bookworm)
 
-## Deploying to the Pi
+## Web Dashboard
 
-Copy all Python files to the Pi:
+Open `http://192.168.4.45:8080` in any browser on the same network.
 
-```bash
-scp *.py yurii@192.168.4.45:/home/yurii/controller
-scp web/index.html yurii@192.168.4.45:/home/yurii/controller/web/
-```
-
-SSH in:
-
-```bash
-ssh yurii@192.168.4.45
-```
-
-## Running
-
-Start the controller from the Pi:
-
-```bash
-cd /home/yurii/controller
-python main.py
-```
-
-This launches four concurrent subsystems:
-
-- **SHT31** — reads temperature and humidity every ~1.5 s and stores results in shared memory
-- **MoistureController** — checks humidity every second; turns the humidifier on if below 90%, off if at or above 90%
-- **Camera** — streams MJPEG video on port `8000` at `/camera`
-- **HttpServer** — serves the REST API on port `8080`
-
-Stop with `Ctrl+C` or `kill` (SIGTERM is handled cleanly).
+- Live camera snapshot (refreshes every 1 s)
+- Current temperature and humidity
+- Humidifier status with manual on/off override
+- Error banner if the Pi is unreachable
 
 ## HTTP API
 
 Base URL: `http://192.168.4.45:8080`
 
-| Method | Path | Description |
+| Method | Path | Response |
 |---|---|---|
-| GET | `/status` | JSON: `{ temp_c, humd, moisturizer_on }` |
-| GET | `/temp` | Plain text: current temperature in °C |
-| GET | `/humd` | Plain text: current humidity in % |
-| POST | `/humd/start` | Turn humidifier on manually |
-| POST | `/humd/stop` | Turn humidifier off manually |
-
-Example:
+| GET | `/status` | `{ "temp_c": 22, "humd": 85, "moisturizer_on": true }` |
+| GET | `/temp` | Plain text temperature in °C |
+| GET | `/humd` | Plain text humidity in % |
+| GET | `/snapshot` | JPEG image of current camera frame |
+| POST | `/humd/start` | Turn humidifier on (manual override) |
+| POST | `/humd/stop` | Turn humidifier off (manual override) |
 
 ```bash
 curl http://192.168.4.45:8080/status
-# {"temp_c": 22, "humd": 85, "moisturizer_on": true}
+curl http://192.168.4.45:8080/snapshot --output frame.jpg
 ```
-
-Camera stream URL: `http://192.168.4.45:8000/camera` (MJPEG, compatible with `<img>` tags and VLC)
-
-## Web Dashboard
-
-Open `web/index.html` in any browser on the same network — no server needed, it's a static file.
-
-The dashboard shows:
-- Live camera feed
-- Current temperature and humidity
-- Humidifier status (auto-updated every 2 s)
-- Manual **Turn On / Turn Off** buttons
-
-If the Pi is unreachable, an error banner appears automatically.
-
-> **Note:** The `BASE` URL in `web/index.html` is hardcoded to `http://192.168.4.45`. Update it if your Pi's IP changes.
 
 ## Humidifier Logic
 
-The controller targets **90–100% relative humidity**. The logic runs in its own thread:
+Target range: **90–100% RH**
 
-- humidity < 90% → humidifier turns **on**
-- humidity ≥ 90% → humidifier turns **off**
+| Condition | Action |
+|---|---|
+| humidity < 90% | humidifier **on** |
+| humidity > 100% | humidifier **off**, manual override cleared |
+| 90–100% | hold current state, manual override cleared |
 
-Manual overrides via the web UI or HTTP API take effect immediately but will be corrected on the next automatic cycle (~1 s).
+Manual overrides from the web UI or API take effect immediately. The auto-control cycle runs every 2 s and resumes once humidity crosses the relevant threshold.
 
-## References
+## Pi 3 Performance Optimisation
 
-- [SHT31 example code](https://github.com/machineshopuk/SHT31/blob/master/SHT31.py)
-- [USB Power Switch Module](https://thepihut.com/products/usb-power-switch-module)
-- [Static IP on Pi OS Bookworm](https://www.abelectronics.co.uk/kb/article/31/set-a-static-ip-address-on-raspberry-pi-os-bookworm)
+The default Pi camera runs the ISP at 30 fps — expensive on a single-core. These changes bring CPU from ~90% down to ~7%:
+
+| Change | CPU before | CPU after |
+|---|---|---|
+| Switch from continuous MJPEG encoding to on-demand JPEG capture | 89% | 47% |
+| Cap camera to 1 fps (`FrameDurationLimits`) | 47% | 22% |
+| Disable unnecessary systemd services | 22% | ~7% |
+
+Disable services not needed for a headless controller:
+
+```bash
+sudo systemctl disable --now \
+  avahi-daemon \
+  dphys-swapfile \
+  accounts-daemon \
+  polkit \
+  e2scrub_reap.timer \
+  apt-daily.timer \
+  apt-daily-upgrade.timer \
+  man-db.timer \
+  NetworkManager-wait-online.service \
+  udisks2
+
+sudo systemctl mask avahi-daemon   # prevent it being pulled back as a dependency
+```
+
+Reduce GPU memory in `/boot/firmware/config.txt` (minimum that keeps HDMI + camera working):
+
+```ini
+gpu_mem=64
+```
+
+Move logs to RAM to reduce SD card writes (extends card lifespan):
+
+```
+# /etc/fstab
+tmpfs /tmp      tmpfs defaults,noatime,size=50m 0 0
+tmpfs /var/log  tmpfs defaults,noatime,size=20m 0 0
+```
