@@ -4,6 +4,10 @@ A Raspberry Pi monitor for Pink Oyster (*Pleurotus djamor*) mushroom cultivation
 
 The humidifier (2× ultrasonic atomizers) runs continuously on its own self-duty-cycling timer. The Pi monitors conditions and allows manual overrides but does not switch the humidifier via GPIO.
 
+## Fruiting Chamber
+
+![Fruiting Chamber](imgs/cubicle.svg)
+
 ## How It Works
 
 Four threads run concurrently and share sensor state through a thread-safe data container:
