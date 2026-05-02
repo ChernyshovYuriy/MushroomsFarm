@@ -1,13 +1,15 @@
 # 🍄 MushroomsFarm
 
-A Raspberry Pi controller for automated mushroom cultivation. It maintains optimal growing conditions by monitoring temperature and humidity via an SHT31 sensor, automatically driving a USB humidifier when humidity drops below target, and giving you a live camera view and manual controls through a local web dashboard — all running on a Pi 3 with under 10% CPU at idle.
+A Raspberry Pi monitor for Pink Oyster (*Pleurotus djamor*) mushroom cultivation. It tracks temperature and humidity via an SHT31 sensor and provides a live camera view and manual humidifier controls through a local web dashboard — all running on a Pi 3 with under 10% CPU at idle.
+
+The humidifier (2× ultrasonic atomizers) runs continuously on its own self-duty-cycling timer. The Pi monitors conditions and allows manual overrides but does not switch the humidifier via GPIO.
 
 ## How It Works
 
 Four threads run concurrently and share sensor state through a thread-safe data container:
 
 - **SHT31** reads temperature and humidity from the sensor every 1.5 s over I2C and writes results to shared memory.
-- **MoistureController** checks the latest humidity reading every 2 s and switches the humidifier on (< 90% RH) or off (≥ 90% RH) via GPIO. Manual overrides from the web UI are respected until the humidity crosses the opposite threshold, at which point automatic control resumes.
+- **MoistureController** checks the latest humidity reading every 2 s and tracks humidifier state. Manual overrides from the web UI are respected until the humidity crosses the opposite threshold, at which point automatic control resumes. Target range: 80–85% RH.
 - **Camera** starts the Pi camera in preview mode at 1 fps and serves JPEG snapshots on demand at `/snapshot`. Running at 1 fps rather than the default 30 fps cuts ISP CPU usage by ~80%.
 - **HttpServer** serves the web dashboard and REST API on port 8080. Snapshot requests are proxied through this same port, avoiding any cross-origin browser issues.
 
@@ -17,7 +19,7 @@ Four threads run concurrently and share sensor state through a thread-safe data 
 |---|---|
 | Board | Raspberry Pi 3 (also works on Pi 4) |
 | Sensor | SHT31 temperature/humidity — I2C, address `0x44`, bus 1 |
-| Humidifier | USB Power Switch Module — GPIO 26 (power), GPIO 13 (trigger) |
+| Humidifier | 2× Micro USB Ultrasonic Atomizer 108KHz — self-duty-cycling 5s on/5s off, in water reservoir |
 | Camera | Raspberry Pi Camera Module (Picamera2) |
 
 Wiring reference: [USB Power Switch Module](https://thepihut.com/products/usb-power-switch-module) · [SHT31 example](https://github.com/machineshopuk/SHT31/blob/master/SHT31.py)
@@ -33,6 +35,8 @@ Wiring reference: [USB Power Switch Module](https://thepihut.com/products/usb-po
 ├── camera.py                 # On-demand JPEG capture, served on port 8000
 ├── httpserver.py             # REST API + dashboard server on port 8080
 ├── gpio_pins_distribution.py # GPIO pin constants
+├── Environment               # Physical setup description
+├── GROWING.md                # Step-by-step growing guide
 ├── service/
 │   └── mushrooms.service     # systemd unit for auto-start on boot
 └── web/
@@ -114,13 +118,15 @@ curl http://192.168.4.45:8080/snapshot --output frame.jpg
 
 ## Humidifier Logic
 
-Target range: **90–100% RH**
+Target range: **80–85% RH**
+
+The humidifier (2× ultrasonic atomizers) runs continuously on its own built-in 5s on/5s off duty cycle — the Pi does not switch it via GPIO. The MoistureController monitors humidity and exposes manual on/off controls via the web UI and API for convenience.
 
 | Condition | Action |
 |---|---|
-| humidity < 90% | humidifier **on** |
-| humidity > 100% | humidifier **off**, manual override cleared |
-| 90–100% | hold current state, manual override cleared |
+| humidity < 80% | humidifier **on** (manual override) |
+| humidity > 85% | humidifier **off** (manual override) |
+| 80–85% | hold current state, manual override cleared |
 
 Manual overrides from the web UI or API take effect immediately. The auto-control cycle runs every 2 s and resumes once humidity crosses the relevant threshold.
 
