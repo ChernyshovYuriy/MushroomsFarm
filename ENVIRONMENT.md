@@ -58,3 +58,31 @@
 | Harvest earlier (caps still slightly cupped) | Color is always more vivid before caps fully flatten |
 
 > **Note:** Pale color is purely cosmetic. Flavor, texture, and yield are unaffected. Fruiting warm trades color for faster growth — a valid tradeoff for *P. djamor*.
+
+---
+
+## Pin Abortion Observations
+
+**Symptom:** Many tiny pins form but fail to develop into full fruiting bodies.
+
+**Primary cause: CO₂ accumulation / insufficient fresh air exchange (FAE).** High CO₂ at the substrate surface is the #1 trigger for pin abort in oyster mushrooms. Contributing factors in this setup:
+
+| Factor | Mechanism |
+|---|---|
+| Low-speed 40 mm fan | May not move enough fresh air for a dense flush |
+| Continuous ultrasonic atomizers | Fine mist displaces air, creating a stagnant CO₂-rich micro-layer at the substrate surface |
+| High ambient temp 25°C+ | Accelerates mycelium respiration → more CO₂ produced locally around pins |
+| Heating mat warmth from below | Upward convection can desiccate fragile young pins before they establish |
+| Ultrasonic mist landing directly on pins | Cold micro-droplets can physically damage or chill tiny pins |
+| RH at 80–85% | On the low end for pin survival — developing pins need closer to 90%+ RH in the immediate air layer |
+
+### Recommendations
+
+| Action | Expected effect |
+|---|---|
+| Increase fan speed or add brief strong FAE bursts a few times daily | Clears CO₂ build-up at substrate surface |
+| Angle atomizers so mist does not fall directly onto substrate | Prevents pin damage from cold micro-droplets |
+| Raise target RH to 88–90% during pinning phase | Supports fragile pin development |
+| Turn off heating mats during fruiting | Reduces local CO₂ production and prevents desiccation from convection |
+
+> **Note:** CO₂ and heat effects are compounding — fixing airflow alone at high temps gives partial improvement. Combining better FAE with lower substrate temperature has the strongest impact on pin survival rate.
