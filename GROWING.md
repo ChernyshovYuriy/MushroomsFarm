@@ -30,10 +30,9 @@ Substrate: Straw (chopped), 3x zip bags (33×39cm)
 
 1. Set up open cubicle with elevated containers (drainage holes facing down)
 2. Tear open bags, pack straw loosely into containers
-3. Start Pi monitoring (SHT31 + camera)
-4. Start humidifier, fan, 12h/day light cycle
-5. Ceramic heater maintains 24-28°C ambient
-6. Heating mat maintains substrate ~25°C
+3. Start humidifier controller, fan, light timer (12h/day cycle)
+4. Ceramic heater maintains 24-28°C ambient
+5. Verify temp/humidity controller is reading correctly
 
 ---
 
@@ -42,7 +41,7 @@ Substrate: Straw (chopped), 3x zip bags (33×39cm)
 - Tiny pins appear on straw surface
 - Do not mist directly onto pins
 - Maintain 80-85% RH and continuous fresh airflow
-- Check Pi dashboard daily
+- Check temp/humidity controller daily
 
 ---
 
@@ -64,7 +63,7 @@ Substrate: Straw (chopped), 3x zip bags (33×39cm)
 
 ---
 
-## Target Parameters (Pi Monitored)
+## Target Parameters
 
 | Parameter | Target |
 |---|---|

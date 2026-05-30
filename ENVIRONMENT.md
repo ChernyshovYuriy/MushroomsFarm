@@ -41,6 +41,33 @@
 
 ---
 
+## Hardware Redesign Plan
+
+The Raspberry Pi served its purpose well — it validated the monitoring approach, identified key environmental issues (humidity, CO₂, temperature), and provided a live dashboard. However, for a small single-chamber grow it is overkill:
+
+- Wiring and powering the Pi adds unnecessary complexity
+- Each USB-controlled device needs its own relay
+- Maintaining a full Linux system for what is essentially on/off control is disproportionate effort
+
+**The plan is to replace the Pi with independent, dedicated hardware units** — each handling one function, self-contained, plug-and-play, and widely available on Amazon at low cost:
+
+| Function | Current (Pi) | Replacement |
+|---|---|---|
+| Temp + humidity monitoring & humidifier control | SHT31 + GPIO relay + Python | Dedicated temperature/humidity controller with built-in relay (e.g. Inkbird IBS-TH2, or similar) |
+| Humidifier switching | USB power switch + GPIO | Humidity controller with outlet relay — no wiring needed |
+| Light cycle | Manual / Pi timer | Plug-in digital timer (mechanical or digital, ~$10) |
+| Visual inspection | Pi Camera + HTTP server | Standalone Wi-Fi camera (optional, no maintenance) |
+
+**Benefits of dedicated units:**
+- No OS to maintain, no SD card corruption risk
+- Each unit is independently powered — one failure doesn't affect others
+- No custom code required — configure via front panel buttons
+- Significantly less wiring
+
+> The Pi codebase in this repository documents the v1 monitoring approach and remains as a reference. It will not be actively developed further.
+
+---
+
 ## Fruiting Color Observations
 
 **Symptom:** Pink Oysters fruit pale/cream rather than vivid pink.
