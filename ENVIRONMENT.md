@@ -113,3 +113,26 @@ The Raspberry Pi served its purpose well — it validated the monitoring approac
 | Turn off heating mats during fruiting | Reduces local CO₂ production and prevents desiccation from convection |
 
 > **Note:** CO₂ and heat effects are compounding — fixing airflow alone at high temps gives partial improvement. Combining better FAE with lower substrate temperature has the strongest impact on pin survival rate.
+
+---
+
+## Misting Water Quality
+
+**Source:** Ottawa municipal tap water (Ottawa River), rated among the best municipal supplies globally — very low contaminants and relatively low disinfectant residuals compared to most cities.
+
+**The key concern — chloramine, not chlorine:**
+
+Ottawa uses **chloramine** (not plain chlorine) as its disinfectant, as it is more stable in the distribution network. This matters because:
+
+| Disinfectant | How to remove |
+|---|---|
+| Chlorine | Evaporates — leave water uncovered 30–60 min, or use a carbon filter |
+| Chloramine | Does **not** evaporate — requires a carbon filter (e.g. Brita) or a campden tablet (potassium metabisulfite) |
+
+Even at Ottawa's low residual levels, chloramine can inhibit pinning — pins are the most sensitive stage of the grow.
+
+**Recommended:** Run misting water through a Brita jug before use. Simple, low-cost, and removes chloramine effectively.
+
+**On additives:** Given Ottawa's water quality, no additives are necessary. The one exception worth considering is **seaweed/kelp extract** (at ¼ of the recommended houseplant dose) — it contains natural cytokinins and trace minerals with a reasonable evidence base for stimulating pinning in oyster mushrooms. Avoid anything sugar-based (feeds contamination) or nutrient solutions (oysters get everything they need from the substrate).
+
+> Annual water quality reports are published by the City of Ottawa at ottawa.ca.
